@@ -54,13 +54,7 @@ pipeline {
             }
         }
 
-        stage('Cleanup') {
-            steps {
-                // REMOVED "docker compose down" so the app stays running!
-                sh 'docker image prune -f'
-                cleanWs()
-            }
-        }
+
     }
 
     post {
