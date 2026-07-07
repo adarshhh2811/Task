@@ -7,7 +7,6 @@ pipeline {
     }
 
     stages {
-
         stage('SCM Pull') {
             steps {
                 checkout scm
@@ -23,15 +22,17 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'docker build -t ${IMAGE_NAME}:latest .'
+                // Using double quotes so Jenkins environment variables interpolate correctly
+                sh "docker build -t ${IMAGE_NAME}:latest ."
             }
         }
 
         stage('Deploy') {
             steps {
+                // Removed --build flag to bypass the outdated Buildx issue
                 sh '''
                 docker-compose down || true
-                docker-compose up -d --build
+                docker-compose up -d
                 '''
             }
         }
@@ -40,25 +41,23 @@ pipeline {
             steps {
                 sh 'sleep 10'
                 sh 'echo "===== HOME ====="'
-                sh 'curl http://localhost:3000/'
+                sh 'curl -f http://localhost:3000/'
                 sh 'echo ""'
 
                 sh 'echo "===== HEALTH ====="'
-                sh 'curl http://localhost:3000/health'
+                sh 'curl -f http://localhost:3000/health'
                 sh 'echo ""'
 
                 sh 'echo "===== TASKS ====="'
-                sh 'curl http://localhost:3000/api/tasks'
+                sh 'curl -f http://localhost:3000/api/tasks'
                 sh 'echo ""'
             }
         }
 
         stage('Cleanup') {
             steps {
-                sh '''
-                docker compose down
-                docker image prune -f
-                '''
+                // REMOVED "docker compose down" so the app stays running!
+                sh 'docker image prune -f'
                 cleanWs()
             }
         }
@@ -68,11 +67,9 @@ pipeline {
         always {
             echo 'Pipeline Finished'
         }
-
         success {
             echo 'Application deployed successfully.'
         }
-
         failure {
             echo 'Pipeline failed.'
         }
